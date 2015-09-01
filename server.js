@@ -15,6 +15,7 @@ mongoose.connect(
 
 // configure body-parser
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
 
 // route (index.html)
 app.get('/', function (req, res) {
@@ -32,13 +33,15 @@ app.get('/api/questions', function (req, res) {
 app.post('/api/questions', function (req, res) {
   // create new question with data from the body of the request (`req.body`)
   // body should contain the question text itself
-  var newQuestion = new Question({
-    text: req.body.text
-  });
+  var newQuestion = new Question(req.body);
 
   // save new question
   newQuestion.save(function (err, savedQuestion) {
-    res.json(savedQuestion);
+  	if (err) {
+  		res.status(422).send(err.errors.text.message);
+  	} else {
+    	res.json(savedQuestion);
+  	}
   });
 });
 
@@ -62,11 +65,15 @@ app.put('/api/questions/:id', function (req, res) {
   Question.findOne({_id: targetId}, function (err, foundQuestion) {
     // update the question's text, if the new text passed in was truthy
     // otherwise keep the same text
-    foundQuestion.text = req.body.text || foundQuestion.text;
+    foundQuestion.text = req.body.text;
 
     // save updated question in db
     foundQuestion.save(function (err, savedQuestion) {
-      res.json(savedQuestion);
+    	if (err) {
+    		res.status(422).send(err.errors.text.message);
+    	} else {
+      	res.json(savedQuestion);
+      }
     });
   });
 });
@@ -81,21 +88,12 @@ app.delete('/api/questions/:id', function (req, res) {
     });
   });
 
-// send back all answers
-// app.get('/api/questions/:questionId/answers', function (req, res) {
-//   Answer.find({}, function (err, answers) {
-//     res.json(answers);
-//   });
-// });
-
-// create new answer
+// create new answer embedded in question
 app.post('/api/questions/:questionId/answers', function (req, res) {
   // create new question with data from the body of the request (`req.body`)
   // body should contain the question text itself
   var questionId = req.params.questionId;
-  var newAnswer = new Answer({
-    content: req.body.content
-  });
+  var newAnswer = new Answer(req.body);
 
   // save new answer
  Question.findOne({_id: questionId}, function (err, foundQuestion) {
@@ -118,7 +116,7 @@ app.put('/api/questions/:questionId/answers/:id', function (req, res) {
     var foundAnswer = foundQuestion.answers.id(answerId);
     // update answer content and completed with data from request body
     foundAnswer.content = req.body.content;
-    foundQuestion.save(function (err, savedAnswer) {
+    foundQuestion.save(function (err, savedQuestion) {
       res.json(foundAnswer);
     });
   });
@@ -136,10 +134,18 @@ app.delete('/api/questions/:questionId/answers/:id', function (req, res) {
     var foundAnswer = foundQuestion.answers.id(answerId);
     // update answer content and completed with data from request body
     foundAnswer.remove();
-    foundQuestion.save(function (err, savedAnswer) {
+    foundQuestion.save(function (err, savedQuestion) {
       res.json(foundAnswer);
     });
   });
+});
+
+// set location for static files
+app.use(express.static(__dirname + '/public'));
+
+// load public/index.html file (angular app)
+app.get('*', function (req, res) {
+  res.sendFile(__dirname + '/public/views/index.html');
 });
 
 // listen on port 3000

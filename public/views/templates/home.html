@@ -1,0 +1,13 @@
+<h1>GA Overflow</h1>
+<hr>
+<div ng-repeat="question in allQuestions">
+	<h3>{{question.text}}</h3>
+	<p>{{question.answers[0].content}}<p>
+</div>
+
+<button ng-click="viewForm = true" class="btn btn-default">Create new question</button>
+<form ng-submit="createQuestion()" ng-show="viewForm">
+	<label for="new-question">Add New Question</label>
+	<input type="text" ng-model="question.text" id="new-question" class="form-control">
+	<input type="submit" value="Submit Question" class="btn btn-default">
+</form>
